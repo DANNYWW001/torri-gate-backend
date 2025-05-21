@@ -1,0 +1,51 @@
+const { JsonWebTokenError } = require("jsonwebtoken");
+
+const jwt = require("jsonwebtoken");
+const { captureRejectionSymbol } = require("nodemailer/lib/xoauth2");
+// we need to write two functions
+//1. to check if you are logged in
+//2. if you have the required permisssions
+
+// to check if logged in (authenticate)
+const isLoggedIn = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!payload) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized to perform action" });
+    }
+    req.user = {
+      email: payload.email,
+      role: payload.role,
+      userId: payload.userId,
+    };
+    next();
+  } catch (error) {
+    console.error(error);
+    return res.startsWith(401).json({ messae: "Authentication Failed" });
+  }
+};
+
+// to check if the user has the required permisions
+
+const requirePermissions = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ messae: "Unauthorized to access this route" });
+    }
+  };
+  next();
+};
+
+module.exports = { isLoggedIn, requirePermissions };
