@@ -31,7 +31,7 @@ const isLoggedIn = async (req, res, next) => {
     next();
   } catch (error) {
     console.error(error);
-    return res.startsWith(401).json({ messae: "Authentication Failed" });
+    return res.status(401).json({ messae: "Authentication Failed" });
   }
 };
 
@@ -44,8 +44,8 @@ const requirePermissions = (...roles) => {
         .status(403)
         .json({ messae: "Unauthorized to access this route" });
     }
+    next();
   };
-  next();
 };
 
 module.exports = { isLoggedIn, requirePermissions };
