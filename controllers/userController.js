@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../helpers/generateToken.");
 const { sendWelcomeEmail, sendResetEmail } = require("../email/sendEmail");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary").v2;
+
 const handleRegister = async (req, res) => {
   const { fullName, email, password, phoneNumber, role } = req.body;
   try {
@@ -268,8 +270,23 @@ const handleUpdateUser = async (req, res) => {
   try {
     const user = await USER.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
+
+    //upoad image with cloudinary
+    if (req.files && req.files.profilePicture) {
+      const profilePicture = req.files.profilePicture;
+      const result = await cloudinary.uploader.upload(
+        profilePicture.tempFilePath,
+        {
+          folder: "toriigate/profilePictures",
+          use_filename: true,
+          unique_filename: false,
+        }
+      );
+      user.profilePicture = result.secure_url;
+    }
+
     user.fullName = fullName;
     user.phoneNumber = phoneNumber;
     await user.save();
