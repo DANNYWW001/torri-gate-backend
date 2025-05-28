@@ -7,6 +7,7 @@ const cloudinary = require("cloudinary").v2;
 const fileUpload = require("express-fileupload");
 const PORT = process.env.PORT || 3000;
 const userRouter = require("./routes/userRoutes");
+const propertyRouter = require("./routes/propertyRouter");
 
 //middleware
 app.use(express.json());
@@ -24,15 +25,18 @@ cloudinary.config({
   api_key: process.env.API_KEY,
   api_secret: process.env.API_SECRET,
 });
+
 //routes
 app.get("/", (req, res) => {
-  res.status(200).json({ success: true, message: "Torii Gate Server" });
+  res.status(200).json({ success: true, message: "Torii gate Server" });
 });
 
 app.use("/api/auth", userRouter);
-//error routes
+app.use("/api/property", propertyRouter);
+
+//error route
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: "ROUTE NOT FOUND" });
+  res.status(404).json({ success: false, message: "Route not found" });
 });
 
 const startServer = async () => {
@@ -45,4 +49,5 @@ const startServer = async () => {
     console.log(error);
   }
 };
+
 startServer();
