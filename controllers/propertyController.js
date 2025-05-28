@@ -11,7 +11,7 @@ const getLandlordsProperties = async (req, res) => {
   const limit = 5;
   const skip = (page - 1) * limit;
   try {
-    const properties = await PROPERTY.find({ landlord: userId })
+    const properties = await PROPERTY.find({ landlord: userId }) 
       .sort("-createdAt")
       .skip(skip)
       .limit(limit);
@@ -19,7 +19,7 @@ const getLandlordsProperties = async (req, res) => {
     //   PROPERTY.countDocuments({ landlord: userId }),
     //   PROPERTY.countDocuments({ landlord: userId, availability: "available" }),
     //   PROPERTY.countDocuments({ landlord: userId, availability: "rented" }),
-    // ]); this code was refactored from the one below they are both correct, you can use this one commented or the one below 
+    // ]); this code was refactored from the one below they are both correct, you can use this one commented or the one below
     const total = await PROPERTY.countDocuments({ landlord: userId });
     const totalPages = Math.ceil(total / limit);
     const availableProperties = await PROPERTY.countDocuments({
@@ -45,7 +45,24 @@ const getLandlordsProperties = async (req, res) => {
 };
 
 const updatePropertyAvailability = async (req, res) => {
-  res.send("update property availability");
+  const { propertyId } = req.params;
+  const { availability } = req.body;
+  if (!availability) {
+    return res.status(400).json({ message: "provide availablity status" });
+  }
+  try {
+    const property = await PROPERTY.findById(propertyId);
+    property.availability = availability;
+    await property.save();
+    res.status(200).json({
+      success: true,
+      message: "Status updated successufully",
+      property,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
 //find() // numof pages
@@ -91,7 +108,42 @@ const getAllProperties = async (req, res) => {
 };
 
 const getAProperty = async (req, res) => {
-  res.send("get a property");
+  const { propertyId } = req.params;
+  try {
+    const property = await PROPERTY.findbyId(propertyId).populate(
+      "landlord",
+      "fullName profilePicture email phoneNumber"
+    );
+    //more from landlord
+    const moreFromLandlord = await PROPERTY.find({
+      landlord: property.landlord._id,
+      _id: { $ne: propertyId },
+      availability: "available",
+    })
+      .limit(3)
+      .sort("-createdAt");
+
+    // similar price range 20%  of the propert price, location
+    const priceRange = property.price * 0.2;
+    const similarProperties = await PROPERTY.find({
+      _id: { $ne: propertyId },
+      availability: "available",
+      price: {
+        $gte: property.price - priceRange,
+        $lte: property.price + priceRange,
+      },
+      location: property.location,
+    })
+      .limit(3)
+      .sort("-createdAt");
+
+    // 1000 800 - 1200
+
+    res.status(200).json({ property, moreFromLandlord, similarProperties });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = {
