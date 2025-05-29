@@ -15,7 +15,7 @@ const propertySchema = new Schema(
       type: String,
       required: true,
     },
-    bedRoom: {
+    bedroom: {
       type: Number,
       required: true,
       min: 0,
